@@ -1,7 +1,7 @@
 ### EIMG.
 
 ###  Synopsis
-####    eimg <|--input-file|--resize-{width,height}|--scale-factor|--pos-{x,y}|--no-bounds|> [FILE]
+####    eimg [--input-file [FILE]] <|--resize-{width,height}|--scale-factor|--pos-{x,y}|--no-bounds|>
 ###  Description:
 ####    Displays images in the terminal using terminal encodings
 ###  Options:

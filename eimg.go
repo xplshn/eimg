@@ -33,8 +33,8 @@ func main() {
 		Name:        "eimg",
 		Repository:  "https://github.com/xplshn/eimg.git",
 		Authors:     []string{"xplshn"},
+		Synopsis:    "[--input-file [FILE]] <|--resize-{width,height}|--scale-factor|--pos-{x,y}|--no-bounds|>",
 		Description: "Displays images in the terminal using terminal encodings",
-		Synopsis:    "<|--input-file|--resize-{width,height}|--scale-factor|--pos-{x,y}|--no-bounds|> [FILE]",
 	}
 
 	helpPage, err := cmdInfo.GenerateHelpPage()
