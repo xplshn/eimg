@@ -71,32 +71,37 @@ func DrawScaledOnBufAt(
 	img image.Image,
 	posx int,
 	posy int,
-	factor int,
+	scaleFactor float64,
 	stride int,
 	bpp int,
 ) {
-	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
-		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
-			r, g, b, a := img.At(x, y).RGBA()
-			for sx := 0; sx < factor; sx++ {
-				for sy := 0; sy < factor; sy++ {
-					offset := bpp * ((posy+y*factor+sy)*stride + posx + x*factor + sx)
-					if offset+bpp > len(buf) {
-						continue // Skip if offset is out of bounds
-					}
-					buf[offset+0] = byte(b)
-					buf[offset+1] = byte(g)
-					buf[offset+2] = byte(r)
-					if bpp == 4 {
-						buf[offset+3] = byte(a)
-					}
-				}
+	bounds := img.Bounds()
+	imgWidth := bounds.Dx()
+	imgHeight := bounds.Dy()
+
+	scaledWidth := int(float64(imgWidth) * scaleFactor)
+	scaledHeight := int(float64(imgHeight) * scaleFactor)
+
+	for y := 0; y < scaledHeight; y++ {
+		for x := 0; x < scaledWidth; x++ {
+			srcX := int(float64(x) / scaleFactor)
+			srcY := int(float64(y) / scaleFactor)
+			r, g, b, a := img.At(srcX, srcY).RGBA()
+			offset := bpp * ((posy+y)*stride + posx + x)
+			if offset+bpp > len(buf) {
+				continue // Skip if offset is out of bounds
+			}
+			buf[offset+0] = byte(b)
+			buf[offset+1] = byte(g)
+			buf[offset+2] = byte(r)
+			if bpp == 4 {
+				buf[offset+3] = byte(a)
 			}
 		}
 	}
 }
 
-func DrawScaledImageAt(img image.Image, posx int, posy int, factor int) error {
+func DrawScaledImageAt(img image.Image, posx int, posy int, scaleFactor float64) error {
 	width, height, stride, bpp, err := FbInit()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Framebuffer init error: %v\n", err)
@@ -104,7 +109,7 @@ func DrawScaledImageAt(img image.Image, posx int, posy int, factor int) error {
 		width, height, stride, bpp = 1920, 1080, 1920*4, 4
 	}
 	buf := make([]byte, width*height*bpp)
-	DrawScaledOnBufAt(buf, img, posx, posy, factor, stride, bpp)
+	DrawScaledOnBufAt(buf, img, posx, posy, scaleFactor, stride, bpp)
 	err = os.WriteFile(fbdev, buf, 0o600)
 	if err != nil {
 		return fmt.Errorf("error writing to framebuffer: %w", err)

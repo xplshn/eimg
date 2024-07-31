@@ -1,4 +1,3 @@
-// eimg // Encode Image // This program re-encodes images into formats a terminal can understand. Sixel, KITTY and iTERM2 are supported protocols. Framebuffer output is supported.
 package main
 
 import (
@@ -24,7 +23,7 @@ func main() {
 	inputFilePath := flag.String("input-file", "", "Input image file path")
 	resizeWidth := flag.Int("resize-width", 0, "Resize width")
 	resizeHeight := flag.Int("resize-height", 0, "Resize height")
-	scaleFactor := flag.Int("scale-factor", 1, "Scale factor")
+	scaleFactor := flag.Float64("scale-factor", 1.0, "Scale factor")
 	posX := flag.Int("pos-x", 0, "X position on framebuffer")
 	posY := flag.Int("pos-y", 0, "Y position on framebuffer")
 	noBounds := flag.Bool("no-bounds", false, "Disable safety feature to keep image in-bounds")
@@ -62,6 +61,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *scaleFactor < 0 {
+		fmt.Print(helpPage)
+		fmt.Fprintln(os.Stderr, "Scale factor cannot be negative")
+		os.Exit(1)
+	}
+
+	if *scaleFactor == 0 {
+		fmt.Print(helpPage)
+		fmt.Fprintln(os.Stderr, "Scale factor cannot be 0")
+		os.Exit(1)
+	}
+
 	cfg := config.Config{
 		ResizeWidth:   *resizeWidth,
 		ResizeHeight:  *resizeHeight,
@@ -70,7 +81,7 @@ func main() {
 	}
 
 	// INLINE FUNCTIONS
-	displayImage := func(cfg *config.Config, inputFilePath string, posX, posY, scaleFactor int, noBounds bool) error {
+	displayImage := func(cfg *config.Config, inputFilePath string, posX, posY int, scaleFactor float64, noBounds bool) error {
 		encodeAndDisplayImage := func(img image.Image, cfg *config.Config) error {
 			if rasterm.IsKittyCapable() {
 				return rasterm.KittyWriteImage(cfg.Writer, img, rasterm.KittyImgOpts{})
@@ -114,8 +125,8 @@ func main() {
 
 			return resizedImg
 		}
-		scaleImage := func(img image.Image, scaleFactor int) image.Image {
-			if scaleFactor == 1 {
+		scaleImage := func(img image.Image, scaleFactor float64) image.Image {
+			if scaleFactor == 1.0 {
 				return img
 			}
 
@@ -123,14 +134,14 @@ func main() {
 			imgWidth := bounds.Dx()
 			imgHeight := bounds.Dy()
 
-			scaledWidth := imgWidth * scaleFactor
-			scaledHeight := imgHeight * scaleFactor
+			scaledWidth := int(float64(imgWidth) * scaleFactor)
+			scaledHeight := int(float64(imgHeight) * scaleFactor)
 
 			scaledImg := image.NewRGBA(image.Rect(0, 0, scaledWidth, scaledHeight))
 			for y := 0; y < scaledHeight; y++ {
 				for x := 0; x < scaledWidth; x++ {
-					srcX := x / scaleFactor
-					srcY := y / scaleFactor
+					srcX := int(float64(x) / scaleFactor)
+					srcY := int(float64(y) / scaleFactor)
 					scaledImg.Set(x, y, img.At(srcX, srcY))
 				}
 			}
@@ -196,11 +207,14 @@ func main() {
 		// Encode and display the image for terminal display
 		if err := encodeAndDisplayImage(img, cfg); err != nil {
 			// Fallback to framebuffer if no terminal protocol is found
+			// Hide the cursor
+			fmt.Print("\033[?25l")
 			if err := fb.DrawScaledImageAt(img, posX, posY, scaleFactor); err != nil {
 				return fmt.Errorf("error drawing on framebuffer: %w", err)
 			}
+			// Show the cursor
+			fmt.Print("\033[?25h")
 		}
-
 		return nil
 	}
 	// E-OF-INLINE-FUNCTIONS
