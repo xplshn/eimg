@@ -21,4 +21,4 @@
 
 
 ##### Why?
-I wanted to be able to view/open images in my computer with no graphics. But then I thought it was cool being able to see images in the framebuffer, so I thought; Adding support for Kitty and Sixel is one library away... HMMM, and so I did it.
+I wanted to be able to view/open images in my computer with no graphics. But then I thought it was cool being able to also see images in the terminal, so I thought; Adding support for Kitty and Sixel is one library away... HMMM, and so I did it.
