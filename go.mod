@@ -1,6 +1,6 @@
 module github.com/xplshn/eimg
 
-go 1.22.5
+go 1.23.0
 
 require (
 	github.com/BourgeoisBear/rasterm v1.1.1

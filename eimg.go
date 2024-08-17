@@ -2,7 +2,6 @@
 package main
 
 import (
-	"eimg/pkg/ur-fb"
 	"flag"
 	"fmt"
 	"github.com/BourgeoisBear/rasterm"
@@ -10,6 +9,7 @@ import (
 	"github.com/jiro4989/textimg/v3/config"
 	"github.com/makeworld-the-better-one/dither/v2"
 	"github.com/xplshn/a-utils/pkg/ccmd"
+	"github.com/xplshn/eimg/pkg/ur-fb"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/vector"
