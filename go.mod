@@ -1,4 +1,4 @@
-module eimg
+module github.com/xplshn/eimg
 
 go 1.22.5
 
