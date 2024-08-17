@@ -1,7 +1,7 @@
 ### EIMG.
 
 ###  Synopsis
-####    eimg [--input-file [FILE]] <|--resize-{width,height}|--scale-factor|--pos-{x,y}|--no-bounds|>
+####    eimg [--input-file [FILE]] <|--resize|--scale-factor|--pos-{x,y}|--no-bounds|--use-encoding|>
 ###  Description:
 ####    Displays images in the terminal using terminal encodings
 ###  Options:
@@ -9,9 +9,9 @@
 #####    --no-bounds: Disable safety feature to keep image in-bounds
 #####    --pos-x: X position on framebuffer
 #####    --pos-y: Y position on framebuffer
-#####    --resize-height: Resize height
-#####    --resize-width: Resize width
+#####    --resize: Resize dimensions (e.g., 800x600)
 #####    --scale-factor: Scale factor
+#####    --use-encoding: Force specific encoding (kitty, iterm, sixel)
 
 
 ![image](https://github.com/user-attachments/assets/a42a3c5a-5aea-485b-86b1-798d5f787033)
