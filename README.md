@@ -11,7 +11,7 @@
 #####    --pos-y: Y position on framebuffer
 #####    --resize: Resize dimensions (e.g., 800x600)
 #####    --scale-factor: Scale factor
-#####    --use-encoding: Force specific encoding (kitty, iterm, sixel)
+#####    --use-encoding: Force specific encoding (kitty, iterm, sixel, ansi)
 
 
 ![image](https://github.com/user-attachments/assets/a42a3c5a-5aea-485b-86b1-798d5f787033)
