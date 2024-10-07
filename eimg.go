@@ -4,13 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"strconv"
 
 	"github.com/xplshn/a-utils/pkg/ccmd"
 	"github.com/xplshn/eimg/pkg/eimg"
-	"github.com/jiro4989/textimg/v3/config"
 	"github.com/xplshn/eimg/pkg/ur-fb"
 )
 
@@ -22,14 +20,14 @@ func main() {
 	posX := flag.Int("pos-x", 0, "X position on framebuffer")
 	posY := flag.Int("pos-y", 0, "Y position on framebuffer")
 	noBounds := flag.Bool("no-bounds", false, "Disable safety feature to keep image in-bounds")
-	useEncoding := flag.String("use-encoding", "", "Force specific encoding (kitty, iterm, sixel)")
+	useEncoding := flag.String("use-encoding", "", "Force specific encoding (kitty, iterm, sixel, ansi)")
 
 	// Initialize command info for help and usage
 	cmdInfo := &ccmd.CmdInfo{
 		Name:        "eimg",
 		Repository:  "https://github.com/xplshn/eimg.git",
 		Authors:     []string{"xplshn"},
-		Synopsis:    "[--input-file [FILE]] <|--resize|--scale-factor|--pos-{x,y}|--no-bounds|--use-encoding|>",
+		Synopsis:    "[--input-file [FILE]] <|--resize|--scale-factor|--pos-{x,y}|--no-bounds|--use-encoding|--use-framebuffer|>",
 		Description: "Displays images in the terminal using terminal encodings",
 	}
 
@@ -72,22 +70,14 @@ func main() {
 		}
 	}
 
-	// Create configuration for the image
-	cfg := &config.Config{
-		ResizeWidth:   resizeWidth,
-		ResizeHeight:  resizeHeight,
-		FileExtension: filepath.Ext(*inputFilePath),
-		Writer:        os.Stdout, // Display output in the terminal
-	}
-
 	// Get terminal or framebuffer dimensions
 	maxWidth, maxHeight := 80, 24 // Default terminal size
 	if fbWidth, fbHeight, _, _, err := fb.FbInit(); err == nil {
 		maxWidth, maxHeight = fbWidth, fbHeight
 	}
 
-	// Pass the configuration to the library, and let it handle framebuffer logic internally
-	err = eimg.DisplayImage(*inputFilePath, cfg, *useEncoding, maxWidth, maxHeight, *posX, *posY, *scaleFactor, *noBounds)
+	// Pass the parameters to the library, and let it handle the logic internally
+	err = eimg.DisplayImage(*inputFilePath, os.Stdout, *useEncoding, maxWidth, maxHeight, *posX, *posY, *scaleFactor, *noBounds, resizeWidth, resizeHeight)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error displaying image:", err)
 		os.Exit(1)

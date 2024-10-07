@@ -1,12 +1,12 @@
-// pkg/eimg/eimg.go
 package eimg
 
 import (
 	"fmt"
-	"os"
-
 	"image"
 	"image/color"
+	"math/rand"
+	"os"
+	"strings"
 
 	// Support for common image formats
 	_ "image/png"
@@ -19,9 +19,19 @@ import (
 
 	"github.com/BourgeoisBear/rasterm"
 	"github.com/ericpauley/go-quantize/quantize"
-	"github.com/jiro4989/textimg/v3/config"
 	"github.com/makeworld-the-better-one/dither/v2"
 	"github.com/xplshn/eimg/pkg/ur-fb"
+)
+
+const (
+	ansiBasicBase      = 16
+	ansiColorSpace     = 6
+	ansiForeground     = "38"
+	ansiReset          = "\x1b[0m"
+	characters         = "01"
+	defaultWidth       = 100
+	proportion         = 0.46
+	rgbaColorSpace     = 1 << 16
 )
 
 // ConvertToPaletted converts the image to a paletted format with dithering.
@@ -113,31 +123,53 @@ func EnsureInBounds(img image.Image, maxWidth, maxHeight int) image.Image {
 	return ResizeImage(img, newWidth, newHeight)
 }
 
-func EncodeAndDisplayImage(img image.Image, cfg *config.Config, useEncoding string) error {
+func EncodeAndDisplayImage(img image.Image, writer *os.File, useEncoding string, posX, posY int, scaleFactor float64) error {
 	switch useEncoding {
 	case "kitty":
-		return rasterm.KittyWriteImage(cfg.Writer, img, rasterm.KittyImgOpts{})
+		return rasterm.KittyWriteImage(writer, img, rasterm.KittyImgOpts{})
 	case "iterm":
-		return rasterm.ItermWriteImage(cfg.Writer, img)
+		return rasterm.ItermWriteImage(writer, img)
 	case "sixel":
 		palettedImg := ConvertToPaletted(img)
-		return rasterm.SixelWriteImage(cfg.Writer, palettedImg)
+		return rasterm.SixelWriteImage(writer, palettedImg)
+	case "ansi":
+		ansiString, err := WriteAnsiImage(img, defaultWidth)
+		if err != nil {
+			return err
+		}
+		_, err = writer.WriteString(ansiString)
+		return err
+	case "framebuffer":
+		// Hide the cursor
+		fmt.Print("\033[?25l")
+		if err := fb.DrawScaledImageAt(img, posX, posY, scaleFactor); err != nil {
+			return fmt.Errorf("error drawing on framebuffer: %w", err)
+		}
+		// Show the cursor & print a newline
+		fmt.Print("\033[?25h")
+		return nil
 	default:
 		if rasterm.IsKittyCapable() {
-			return rasterm.KittyWriteImage(cfg.Writer, img, rasterm.KittyImgOpts{})
+			return rasterm.KittyWriteImage(writer, img, rasterm.KittyImgOpts{})
 		} else if rasterm.IsItermCapable() {
-			return rasterm.ItermWriteImage(cfg.Writer, img)
+			return rasterm.ItermWriteImage(writer, img)
 		} else if isSixelCapable, err := rasterm.IsSixelCapable(); err == nil && isSixelCapable {
 			palettedImg := ConvertToPaletted(img)
-			return rasterm.SixelWriteImage(cfg.Writer, palettedImg)
+			return rasterm.SixelWriteImage(writer, palettedImg)
 		}
 
-		return fmt.Errorf("terminal does not support any known image protocol")
+		// Fallback to ANSI
+		ansiString, err := WriteAnsiImage(img, defaultWidth)
+		if err != nil {
+			return err
+		}
+		_, err = writer.WriteString(ansiString)
+		return err
 	}
 }
 
 // DisplayImage decodes an image from the given file path and displays it.
-func DisplayImage(filePath string, cfg *config.Config, useEncoding string, maxWidth, maxHeight int, posX, posY int, scaleFactor float64, noBounds bool) error {
+func DisplayImage(filePath string, writer *os.File, useEncoding string, maxWidth, maxHeight int, posX, posY int, scaleFactor float64, noBounds bool, resizeWidth, resizeHeight int) error {
 	imgFile, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -150,8 +182,8 @@ func DisplayImage(filePath string, cfg *config.Config, useEncoding string, maxWi
 	}
 
 	// Resize the image if needed
-	if cfg.ResizeWidth > 0 || cfg.ResizeHeight > 0 {
-		img = ResizeImage(img, cfg.ResizeWidth, cfg.ResizeHeight)
+	if resizeWidth > 0 || resizeHeight > 0 {
+		img = ResizeImage(img, resizeWidth, resizeHeight)
 	}
 
 	// Scale the image if needed
@@ -163,15 +195,49 @@ func DisplayImage(filePath string, cfg *config.Config, useEncoding string, maxWi
 	}
 
 	// Encode and display the image for terminal display
-	if err := EncodeAndDisplayImage(img, cfg, useEncoding); err != nil {
-		// Fallback to framebuffer if no terminal protocol is found
-		// Hide the cursor
-		fmt.Print("\033[?25l")
-		if err := fb.DrawScaledImageAt(img, posX, posY, scaleFactor); err != nil {
-			return fmt.Errorf("error drawing on framebuffer: %w", err)
-		}
-		// Show the cursor & print a newline
-		fmt.Print("\033[?25h")
+	return EncodeAndDisplayImage(img, writer, useEncoding, posX, posY, scaleFactor)
+}
+
+// ---------- ANSI SUPPORT --------------
+
+func toAnsiCode(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+	code := ansiBasicBase + toAnsiSpace(r)*36 + toAnsiSpace(g)*6 + toAnsiSpace(b)
+	if code == ansiBasicBase {
+		return ansiReset
 	}
-	return nil
+	return fmt.Sprintf("\033[%s;5;%dm", ansiForeground, code)
+}
+
+func toAnsiSpace(val uint32) int {
+	return int(float32(ansiColorSpace) * (float32(val) / float32(rgbaColorSpace)))
+}
+
+func WriteAnsiImage(img image.Image, width int) (string, error) {
+	imgW, imgH := float32(img.Bounds().Dx()), float32(img.Bounds().Dy())
+	height := float32(width) * (imgH / imgW) * proportion
+	resizedImg := ResizeImage(img, width, int(height))
+
+	bounds := resizedImg.Bounds()
+	var current, previous string
+	var ansiString strings.Builder
+
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			current = toAnsiCode(resizedImg.At(x, y))
+			if current != previous {
+				ansiString.WriteString(current)
+			}
+			if current != ansiReset {
+				char := string(characters[rand.Intn(len(characters))])
+				ansiString.WriteString(char)
+			} else {
+				ansiString.WriteString(" ")
+			}
+			previous = current
+		}
+		ansiString.WriteString("\n")
+	}
+	ansiString.WriteString(ansiReset)
+	return ansiString.String(), nil
 }
