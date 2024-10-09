@@ -241,3 +241,4 @@ func WriteAnsiImage(img image.Image, width int) (string, error) {
 	ansiString.WriteString(ansiReset)
 	return ansiString.String(), nil
 }
+

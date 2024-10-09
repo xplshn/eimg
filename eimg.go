@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 	"strconv"
@@ -14,7 +15,7 @@ import (
 
 func main() {
 	// Define command line flags
-	inputFilePath := flag.String("input-file", "", "Input image file path")
+	input := flag.String("input", "", "Input image file path or URL")
 	resizeFlag := flag.String("resize", "", "Resize dimensions (e.g., 800x600)")
 	scaleFactor := flag.Float64("scale-factor", 1.0, "Scale factor")
 	posX := flag.Int("pos-x", 0, "X position on framebuffer")
@@ -27,7 +28,7 @@ func main() {
 		Name:        "eimg",
 		Repository:  "https://github.com/xplshn/eimg.git",
 		Authors:     []string{"xplshn"},
-		Synopsis:    "[--input-file [FILE]] <|--resize|--scale-factor|--pos-{x,y}|--no-bounds|--use-encoding|--use-framebuffer|>",
+		Synopsis:    "[--input [FILE|URL]] <|--resize|--scale-factor|--pos-{x,y}|--no-bounds|--use-encoding|--use-framebuffer|>",
 		Description: "Displays images in the terminal using terminal encodings",
 	}
 
@@ -42,10 +43,10 @@ func main() {
 
 	flag.Parse()
 
-	// Validate input file
-	if *inputFilePath == "" {
+	// Validate input file or URL
+	if *input == "" {
 		fmt.Print(helpPage)
-		fmt.Fprintln(os.Stderr, "Input file path is required")
+		fmt.Fprintln(os.Stderr, "Input file path or URL is required")
 		os.Exit(1)
 	}
 
@@ -76,8 +77,37 @@ func main() {
 		maxWidth, maxHeight = fbWidth, fbHeight
 	}
 
+	// Download the image if a URL is provided
+	var inputFilePath string
+	if strings.HasPrefix(*input, "http://") || strings.HasPrefix(*input, "https://") {
+		resp, err := http.Get(*input)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error downloading image:", err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		// Save the image to a temporary file
+		tmpFile, err := os.CreateTemp("", "eimg-*.png")
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error creating temporary file:", err)
+			os.Exit(1)
+		}
+		defer tmpFile.Close()
+
+		_, err = tmpFile.ReadFrom(resp.Body)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Error saving image to temporary file:", err)
+			os.Exit(1)
+		}
+
+		inputFilePath = tmpFile.Name()
+	} else {
+		inputFilePath = *input
+	}
+
 	// Pass the parameters to the library, and let it handle the logic internally
-	err = eimg.DisplayImage(*inputFilePath, os.Stdout, *useEncoding, maxWidth, maxHeight, *posX, *posY, *scaleFactor, *noBounds, resizeWidth, resizeHeight)
+	err = eimg.DisplayImage(inputFilePath, os.Stdout, *useEncoding, maxWidth, maxHeight, *posX, *posY, *scaleFactor, *noBounds, resizeWidth, resizeHeight)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error displaying image:", err)
 		os.Exit(1)
