@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 	"strconv"
-
+	"time"  // To get the current epoch time
 	"github.com/xplshn/a-utils/pkg/ccmd"
 	"github.com/xplshn/eimg/pkg/eimg"
 	"github.com/xplshn/eimg/pkg/ur-fb"
@@ -87,13 +87,16 @@ func main() {
 		}
 		defer resp.Body.Close()
 
+		// Generate file name with epoch time
+		epochTime := time.Now().Unix()
+		tmpFileName := fmt.Sprintf("eimg-%d.png", epochTime)
+
 		// Save the image to a temporary file
-		tmpFile, err := os.CreateTemp("", "eimg-*.png")
+		tmpFile, err := os.CreateTemp("", tmpFileName)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error creating temporary file:", err)
 			os.Exit(1)
 		}
-		defer tmpFile.Close()
 
 		_, err = tmpFile.ReadFrom(resp.Body)
 		if err != nil {
@@ -102,6 +105,9 @@ func main() {
 		}
 
 		inputFilePath = tmpFile.Name()
+
+		// Close the file after reading, but do not delete it yet
+		tmpFile.Close()
 	} else {
 		inputFilePath = *input
 	}
@@ -112,5 +118,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, "Error displaying image:", err)
 		os.Exit(1)
 	}
+
+	// Defer the removal of the file
+	if strings.HasPrefix(*input, "http://") || strings.HasPrefix(*input, "https://") {
+		defer os.Remove(inputFilePath)
+	}
+
 	println()
 }
