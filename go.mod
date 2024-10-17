@@ -8,7 +8,7 @@ require (
 	github.com/jiro4989/textimg/v3 v3.1.10
 	github.com/makeworld-the-better-one/dither/v2 v2.4.0
 	github.com/orangecms/go-framebuffer v0.0.0-20200613202404-a0700d90c330
-	github.com/xplshn/a-utils v0.0.0-20241004032830-01dbeda948ae
+	github.com/xplshn/a-utils v0.0.0-20241013165245-f321841bb8eb
 	golang.org/x/image v0.21.0
 )
 

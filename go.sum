@@ -23,6 +23,8 @@ github.com/xplshn/a-utils v0.0.0-20240801030140-4819c954217d h1:yAGHCeWMBXf/LNz6
 github.com/xplshn/a-utils v0.0.0-20240801030140-4819c954217d/go.mod h1:pop75ccQzj5fS5CRq3g7uVyrlh0L5HxMqWuC0nJCNI8=
 github.com/xplshn/a-utils v0.0.0-20241004032830-01dbeda948ae h1:kCK72Qb6WXJ1BlYhFEEEZmyrErRbzxEWzNa5gGTBArU=
 github.com/xplshn/a-utils v0.0.0-20241004032830-01dbeda948ae/go.mod h1:EiCsdkVB0QD5VJxECN8MFOlL4IruB4oWIutKn8s4/jo=
+github.com/xplshn/a-utils v0.0.0-20241013165245-f321841bb8eb h1:Zl2lr7LNSo5mKCMGaGssuCwnkTFsB7KQ7wBvvqBoNcY=
+github.com/xplshn/a-utils v0.0.0-20241013165245-f321841bb8eb/go.mod h1:fbjBDaIIOdBuEiatUoISlUMoqnUOVPZId8ZJajtftqY=
 golang.org/x/image v0.19.0 h1:D9FX4QWkLfkeqaC62SonffIIuYdOk/UE2XKUBgRIBIQ=
 golang.org/x/image v0.19.0/go.mod h1:y0zrRqlQRWQ5PXaYCOMLTW2fpsxZ8Qh9I/ohnInJEys=
 golang.org/x/image v0.21.0 h1:c5qV36ajHpdj4Qi0GnE0jUc/yuo33OLFaa0d+crTD5s=

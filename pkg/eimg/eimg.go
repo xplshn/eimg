@@ -9,13 +9,13 @@ import (
 	"strings"
 
 	// Support for common image formats
-	_ "image/png"
-	_ "image/jpeg"
-	_ "image/gif"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/vector"
 	_ "golang.org/x/image/webp"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 
 	"github.com/BourgeoisBear/rasterm"
 	"github.com/ericpauley/go-quantize/quantize"
@@ -24,14 +24,14 @@ import (
 )
 
 const (
-	ansiBasicBase      = 16
-	ansiColorSpace     = 6
-	ansiForeground     = "38"
-	ansiReset          = "\x1b[0m"
-	characters         = "01"
-	defaultWidth       = 100
-	proportion         = 0.46
-	rgbaColorSpace     = 1 << 16
+	ansiBasicBase  = 16
+	ansiColorSpace = 8
+	ansiForeground = "38"
+	ansiReset      = "\x1b[0m"
+	characters     = "01"
+	defaultWidth   = 100
+	proportion     = 0.46
+	rgbaColorSpace = 1 << 16
 )
 
 // ConvertToPaletted converts the image to a paletted format with dithering.
@@ -241,4 +241,3 @@ func WriteAnsiImage(img image.Image, width int) (string, error) {
 	ansiString.WriteString(ansiReset)
 	return ansiString.String(), nil
 }
-
