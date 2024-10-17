@@ -25,7 +25,7 @@ import (
 
 const (
 	ansiBasicBase  = 16
-	ansiColorSpace = 8
+	ansiColorSpace = 6
 	ansiForeground = "38"
 	ansiReset      = "\x1b[0m"
 	characters     = "01"
